@@ -1,6 +1,7 @@
 package com.chyiiiiiiiiiiiiii.zendesk_messaging
 
 import android.app.Activity
+import android.content.Context
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -16,10 +17,12 @@ class ZendeskMessagingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private lateinit var zendeskMessaging: ZendeskMessaging
 
     var activity: Activity? = null
+    var applicationContext: Context? = null
     var isInitialized: Boolean = false
     var isLoggedIn: Boolean = false
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        applicationContext = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "zendesk_messaging")
         channel.setMethodCallHandler(this)
         zendeskMessaging = ZendeskMessaging(this, channel)
@@ -38,6 +41,10 @@ class ZendeskMessagingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     reportNotInitializedFlutterError(result)
                     return
                 }
+                if (activity == null) {
+                    result.error("no_activity", "Activity is null", null)
+                    return
+                }
                 zendeskMessaging.show()
                 result.success(null)
             }
@@ -46,6 +53,10 @@ class ZendeskMessagingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 if (!isInitialized) {
                     println("$tag - Zendesk SDK needs to be initialized first")
                     reportNotInitializedFlutterError(result)
+                    return
+                }
+                if (activity == null) {
+                    result.error("no_activity", "Activity is null", null)
                     return
                 }
                 val conversationId = call.argument<String>("conversationId")
@@ -63,6 +74,10 @@ class ZendeskMessagingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     reportNotInitializedFlutterError(result)
                     return
                 }
+                if (activity == null) {
+                    result.error("no_activity", "Activity is null", null)
+                    return
+                }
                 zendeskMessaging.showConversationList()
                 result.success(null)
             }
@@ -71,6 +86,10 @@ class ZendeskMessagingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 if (!isInitialized) {
                     println("$tag - Zendesk SDK needs to be initialized first")
                     reportNotInitializedFlutterError(result)
+                    return
+                }
+                if (activity == null) {
+                    result.error("no_activity", "Activity is null", null)
                     return
                 }
                 zendeskMessaging.startNewConversation()
@@ -287,8 +306,8 @@ class ZendeskMessagingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         result.error("invalid_argument", "messageData is required", null)
                         return
                     }
-                    val context = activity ?: run {
-                        result.error("no_context", "Activity context is null", null)
+                    val context = activity ?: applicationContext ?: run {
+                        result.error("no_context", "No available Context (activity/application)", null)
                         return
                     }
                     // Convert Map<String, Any> to Map<String, String>
@@ -305,6 +324,10 @@ class ZendeskMessagingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 if (!isInitialized) {
                     println("$tag - Zendesk SDK needs to be initialized first")
                     reportNotInitializedFlutterError(result)
+                    return
+                }
+                if (activity == null) {
+                    result.error("no_activity", "Activity is null", null)
                     return
                 }
                 try {
@@ -344,6 +367,7 @@ class ZendeskMessagingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        applicationContext = null
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
