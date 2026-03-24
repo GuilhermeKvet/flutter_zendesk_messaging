@@ -312,8 +312,14 @@ class ZendeskMessaging(
 
     fun initialize(channelKey: String, result: MethodChannel.Result) {
         println("$TAG - Channel Key - $channelKey")
+        val context = plugin.activity ?: plugin.applicationContext
+        if (context == null) {
+            plugin.isInitialized = false
+            result.error("no_context", "No available Context (activity/application)", null)
+            return
+        }
         Zendesk.initialize(
-            plugin.activity!!,
+            context,
             channelKey,
             successCallback = { value ->
                 plugin.isInitialized = true
